@@ -11,6 +11,7 @@ from shapely.geometry import Polygon
 import requests
 import json
 import sys
+import Camera as camera
 
 
 # PARAMETERS
@@ -34,7 +35,7 @@ weights_v3 = "weights/best_detection3.pt"   # YOLOv8s
 # MODIFIABLE ........................................
 
 # TEST image
-test_image = 'images/4.jpeg'
+test_image = 'images/current_board.jpeg'
 
 # DEFAULT values
 image = test_image
@@ -233,14 +234,20 @@ def connect_square_to_detection(detections, square, boxes):
 
 
 def getFEN(image):
+    
+    print("Detecting corners")
 
     corners, boxes = detect_corners(image)
+    
+    print("corners detected: " + str(len(corners)))
 
     print(corners)
 
     transformed_image = four_point_transform(image, corners)
 
     ptsT, ptsL = plot_grid_on_transformed_image(transformed_image)
+    
+    print("Detecting pieces")
 
     detections, boxes = chess_pieces_detector(transformed_image)
 
@@ -412,14 +419,38 @@ def set_stockfish_params(args):
     return _img, _depth, _mode
 
 
+import time
+from picamera2 import Picamera2, Preview
+import libcamera
+
+
+def takePhoto():
+    picam = Picamera2()
+
+    config = picam.create_still_configuration({"size": (1944, 1944)})
+
+    picam.configure(config)
+
+    picam.start()
+    #time.sleep(0)
+    picam.capture_file("images/current_board.jpeg")
+
+    picam.close()
+
 # syntax CLI: python main.py "img.jpeg" 5 "best move"
 if __name__ == '__main__':
-
+    
+    
+    
     if 1 < len(sys.argv) <= 4:
         image, depth, mode = set_stockfish_params(sys.argv)
     elif len(sys.argv) > 4:
         print("Too many arguments!")
         sys.exit(1)
+    
+    takePhoto()
+    
+    print("Photo taken")
 
     FEN = getFEN(image)
 
